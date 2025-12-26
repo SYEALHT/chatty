@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ChatWindow from '@/components/ChatWindow';
 import ChatInput from '@/components/ChatInput';
 import AvatarBuilder from '@/components/AvatarBuilder';
+import PresetAvatars from '@/components/PresetAvatars';
 import { Avatar, Message } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -171,22 +172,9 @@ export default function Home() {
               />
               <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
             </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-center">
-              <div>
-                <p className="text-lg font-semibold text-purple-300 mb-4">
-                  Welcome to Chatty
-                </p>
-                <p className="text-slate-400 mb-8">
-                  Create your first avatar or select one from the sidebar to start chatting.
-                </p>
-                <button
-                  onClick={() => setShowBuilder(true)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-lg transition-all"
-                >
-                  Create Avatar
-                </button>
-              </div>
+          ) : showBuilder ? null : (
+            <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-slate-800 to-slate-900">
+              <PresetAvatars onSelectPreset={handleCreateAvatar} isLoading={isLoading} />
             </div>
           )}
         </div>

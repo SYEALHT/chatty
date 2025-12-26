@@ -8,246 +8,326 @@ interface AvatarBuilderProps {
   isLoading: boolean;
 }
 
+type BuilderStep = 'style' | 'name' | 'personality' | 'traits' | 'communication' | 'review';
+
+const AVATAR_STYLES = ['Mysterious', 'Playful', 'Empathetic', 'Intellectual', 'Passionate'];
+const PERSONALITY_TYPES = [
+  { name: 'Mysterious', desc: 'Enigmatic and thoughtful' },
+  { name: 'Playful', desc: 'Spirited and fun' },
+  { name: 'Empathetic', desc: 'Warm and caring' },
+  { name: 'Intellectual', desc: 'Analytical and curious' },
+  { name: 'Passionate', desc: 'Intense and bold' },
+];
+const TRAITS_OPTIONS = [
+  'empathetic', 'playful', 'mysterious', 'calm', 'intense',
+  'thoughtful', 'curious', 'warm', 'witty', 'gentle'
+];
+const COMMUNICATION_STYLES = ['short', 'expressive', 'poetic', 'casual', 'formal'] as const;
+
 export default function AvatarBuilder({ onComplete, isLoading }: AvatarBuilderProps) {
-  const [step, setStep] = useState<'name' | 'personality' | 'traits' | 'style' | 'review'>(
-    'name'
-  );
+  const [step, setStep] = useState<BuilderStep>('style');
   const [avatar, setAvatar] = useState<Partial<Avatar>>({
     emotionalDepth: 7,
     communicationStyle: 'expressive',
     memoryEnabled: true,
+    traits: [],
   });
-
   const [nameInput, setNameInput] = useState('');
   const [personalityInput, setPersonalityInput] = useState('');
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
 
-  const traits = [
-    'empathetic',
-    'playful',
-    'mysterious',
-    'calm',
-    'intense',
-    'thoughtful',
-    'curious',
-    'warm',
-    'witty',
-    'gentle',
-  ];
-
-  const styles: Array<'short' | 'expressive' | 'poetic' | 'casual' | 'formal'> = [
-    'short',
-    'expressive',
-    'poetic',
-    'casual',
-    'formal',
-  ];
-
-  const handleNameNext = () => {
-    if (nameInput.trim()) {
-      setAvatar({ ...avatar, name: nameInput.trim() });
-      setStep('personality');
-    }
-  };
-
-  const handlePersonalityNext = () => {
-    if (personalityInput.trim()) {
-      setAvatar({ ...avatar, personality: personalityInput.trim() });
-      setStep('traits');
-    }
-  };
+  const steps: BuilderStep[] = ['style', 'name', 'personality', 'traits', 'communication', 'review'];
+  const currentStepIndex = steps.indexOf(step);
+  const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
   const handleTraitToggle = (trait: string) => {
     if (selectedTraits.includes(trait)) {
       setSelectedTraits(selectedTraits.filter((t) => t !== trait));
-    } else {
+    } else if (selectedTraits.length < 5) {
       setSelectedTraits([...selectedTraits, trait]);
     }
   };
 
-  const handleTraitsNext = () => {
-    if (selectedTraits.length > 0) {
-      setAvatar({ ...avatar, traits: selectedTraits });
-      setStep('style');
+  const handleNext = () => {
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < steps.length) {
+      setStep(steps[nextIndex]);
     }
   };
 
-  const handleStyleNext = () => {
-    setStep('review');
+  const handleBack = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) {
+      setStep(steps[prevIndex]);
+    }
   };
 
   const handleComplete = async () => {
     const finalAvatar: Avatar = {
       id: Math.random().toString(36).substring(7),
       name: avatar.name || 'Unknown',
-      personality: avatar.personality || '',
-      traits: avatar.traits || [],
+      personality: personalityInput,
+      traits: selectedTraits,
       communicationStyle: avatar.communicationStyle || 'expressive',
       emotionalDepth: avatar.emotionalDepth || 7,
       memoryEnabled: avatar.memoryEnabled !== false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
     onComplete(finalAvatar);
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      {/* Step Indicator */}
-      <div className="mb-8 flex items-center justify-between">
-        {['name', 'personality', 'traits', 'style', 'review'].map((s, i) => (
-          <div key={s} className="flex items-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                step === s
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                  : ['name', 'personality', 'traits', 'style', 'review'].indexOf(step) >
-                      i
-                    ? 'bg-green-600 text-white'
-                    : 'bg-slate-700 text-slate-400'
-              }`}
-            >
-              {i + 1}
-            </div>
-            {i < 4 && <div className="w-12 h-1 bg-slate-700 mx-2" />}
-          </div>
-        ))}
+      {/* Progress Bar */}
+      <div className="mb-8">
+        <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className="text-xs text-slate-400 mt-2">{currentStepIndex + 1} of {steps.length}</p>
       </div>
 
-      {/* Step Content */}
-      <div className="bg-slate-800 rounded-lg p-8 border border-slate-700">
-        {step === 'name' && (
+      {/* Content */}
+      <div className="bg-slate-800/50 rounded-lg p-8 border border-slate-700">
+        {/* Style Selection */}
+        {step === 'style' && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-4">What&apos;s their name?</h2>
-            <p className="text-slate-400 mb-6">Let&apos;s start with something that feels right.</p>
-            <input
-              type="text"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="e.g., Luna, Alex, Sage..."
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-              onKeyPress={(e) => e.key === 'Enter' && handleNameNext()}
-            />
+            <h2 className="text-3xl font-light italic text-white mb-2 font-serif">Choose a Vibe</h2>
+            <p className="text-slate-400 mb-6">What aesthetic speaks to you?</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {[
+                { name: 'Mysterious', color: 'from-purple-600 to-indigo-600', emoji: '🌙' },
+                { name: 'Playful', color: 'from-pink-500 to-rose-500', emoji: '✨' },
+                { name: 'Empathetic', color: 'from-green-500 to-emerald-500', emoji: '💫' },
+                { name: 'Intellectual', color: 'from-blue-600 to-cyan-600', emoji: '🔮' },
+              ].map((style) => (
+                <button
+                  key={style.name}
+                  onClick={() => setAvatar({ ...avatar, name: style.name })}
+                  className={`group relative overflow-hidden rounded-xl border-2 transition-all ${
+                    avatar.name === style.name
+                      ? 'border-pink-500'
+                      : 'border-slate-600 hover:border-slate-500'
+                  }`}
+                >
+                  <div className={`bg-gradient-to-br ${style.color} h-40 flex flex-col items-center justify-center`}>
+                    <div className="text-5xl mb-2">{style.emoji}</div>
+                    <div className="text-white font-semibold text-lg">{style.name}</div>
+                  </div>
+                  {avatar.name === style.name && (
+                    <div className="absolute inset-0 bg-white/20 flex items-center justify-center">
+                      <div className="text-3xl">✓</div>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={handleNameNext}
-              disabled={!nameInput.trim() || isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
+              onClick={handleNext}
+              disabled={!avatar.name || isLoading}
+              className="w-full bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
             >
-              Continue
+              Next
             </button>
           </div>
         )}
 
+        {/* Name Input */}
+        {step === 'name' && (
+          <div>
+            <h2 className="text-3xl font-light italic text-white mb-2 font-serif">What's their name?</h2>
+            <p className="text-slate-400 mb-6">Choose something that feels right</p>
+            <input
+              type="text"
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="e.g., Luna, Echo, Sage..."
+              className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 mb-6"
+              onKeyPress={(e) => e.key === 'Enter' && nameInput.trim() && handleNext()}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handleBack}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-all"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => {
+                  setAvatar({ ...avatar, name: nameInput.trim() });
+                  handleNext();
+                }}
+                disabled={!nameInput.trim() || isLoading}
+                className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Personality Selection */}
         {step === 'personality' && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-4">Describe their personality.</h2>
-            <p className="text-slate-400 mb-6">
-              How do they come across? What&apos;s their essence?
-            </p>
-            <textarea
-              value={personalityInput}
-              onChange={(e) => setPersonalityInput(e.target.value)}
-              placeholder="e.g., Warm, mysterious, playful, deeply thoughtful..."
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6 h-24"
-            />
-            <div className="flex gap-4">
+            <h2 className="text-3xl font-light italic text-white mb-2 font-serif">Choose Personality</h2>
+            <p className="text-slate-400 mb-6">Pick what resonates with you</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              {[
+                { name: 'Mysterious', desc: 'Enigmatic & thoughtful', color: 'from-purple-600 to-indigo-600', icon: '🌑' },
+                { name: 'Playful', desc: 'Spirited & fun', color: 'from-pink-500 to-rose-500', icon: '🎭' },
+                { name: 'Empathetic', desc: 'Warm & caring', color: 'from-green-500 to-emerald-500', icon: '💚' },
+                { name: 'Intellectual', desc: 'Analytical & curious', color: 'from-blue-600 to-cyan-600', icon: '🧠' },
+              ].map((p) => (
+                <button
+                  key={p.name}
+                  onClick={() => setPersonalityInput(p.name)}
+                  className={`group relative overflow-hidden rounded-xl border-2 transition-all ${
+                    personalityInput === p.name
+                      ? 'border-pink-500'
+                      : 'border-slate-600 hover:border-slate-500'
+                  }`}
+                >
+                  <div className={`bg-gradient-to-br ${p.color} h-40 flex flex-col items-center justify-center text-center px-4`}>
+                    <div className="text-4xl mb-2">{p.icon}</div>
+                    <div className="text-white font-semibold">{p.name}</div>
+                    <div className="text-white/70 text-xs mt-1">{p.desc}</div>
+                  </div>
+                  {personalityInput === p.name && (
+                    <div className="absolute inset-0 bg-white/20 flex items-center justify-center">
+                      <div className="text-4xl">✓</div>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
               <button
-                onClick={() => setStep('name')}
+                onClick={handleBack}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Back
               </button>
               <button
-                onClick={handlePersonalityNext}
-                disabled={!personalityInput.trim() || isLoading}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
+                onClick={handleNext}
+                disabled={!personalityInput || isLoading}
+                className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
               >
-                Continue
+                Next
               </button>
             </div>
           </div>
         )}
 
+        {/* Traits Selection */}
         {step === 'traits' && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-4">Pick their core traits.</h2>
-            <p className="text-slate-400 mb-6">Select what resonates.</p>
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {traits.map((trait) => (
+            <h2 className="text-3xl font-light italic text-white mb-2 font-serif">Core Traits</h2>
+            <p className="text-slate-400 mb-6">Choose up to 5 traits ({selectedTraits.length}/5)</p>
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {[
+                { name: 'empathetic', emoji: '💚' },
+                { name: 'playful', emoji: '🎮' },
+                { name: 'mysterious', emoji: '🌙' },
+                { name: 'calm', emoji: '🧘' },
+                { name: 'intense', emoji: '🔥' },
+                { name: 'thoughtful', emoji: '🤔' },
+                { name: 'curious', emoji: '🔍' },
+                { name: 'warm', emoji: '☀️' },
+                { name: 'witty', emoji: '⚡' },
+                { name: 'gentle', emoji: '🌸' },
+              ].map((trait) => (
                 <button
-                  key={trait}
-                  onClick={() => handleTraitToggle(trait)}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    selectedTraits.includes(trait)
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  key={trait.name}
+                  onClick={() => handleTraitToggle(trait.name)}
+                  disabled={selectedTraits.length >= 5 && !selectedTraits.includes(trait.name)}
+                  className={`relative overflow-hidden rounded-lg border-2 py-4 px-2 transition-all text-center font-semibold ${
+                    selectedTraits.includes(trait.name)
+                      ? 'border-pink-500 bg-pink-500/20 text-white'
+                      : 'border-slate-600 bg-slate-700/30 text-slate-300 hover:border-slate-500 disabled:opacity-30'
                   }`}
                 >
-                  {trait}
+                  <div className="text-2xl mb-1">{trait.emoji}</div>
+                  <div className="text-xs">{trait.name}</div>
+                  {selectedTraits.includes(trait.name) && (
+                    <div className="absolute top-1 right-1 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center text-white text-xs">
+                      ✓
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
-                onClick={() => setStep('personality')}
+                onClick={handleBack}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Back
               </button>
               <button
-                onClick={handleTraitsNext}
+                onClick={handleNext}
                 disabled={selectedTraits.length === 0 || isLoading}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
+                className="flex-1 bg-pink-600 hover:bg-pink-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
               >
-                Continue
+                Next
               </button>
             </div>
           </div>
         )}
 
-        {step === 'style' && (
+        {/* Communication Style */}
+        {step === 'communication' && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-4">How do they communicate?</h2>
-            <p className="text-slate-400 mb-6">Short messages or detailed, poetic responses?</p>
+            <h2 className="text-3xl font-light italic text-white mb-2 font-serif">Communication Style</h2>
+            <p className="text-slate-400 mb-6">How do they express themselves?</p>
             <div className="space-y-3 mb-6">
-              {styles.map((style) => (
+              {[
+                { style: 'short' as const, desc: 'Brief, to the point', icon: '📝' },
+                { style: 'expressive' as const, desc: 'Detailed and vivid', icon: '🎨' },
+                { style: 'poetic' as const, desc: 'Lyrical and artistic', icon: '✒️' },
+                { style: 'casual' as const, desc: 'Friendly and relaxed', icon: '💬' },
+                { style: 'formal' as const, desc: 'Professional and refined', icon: '🎩' },
+              ].map((item) => (
                 <button
-                  key={style}
-                  onClick={() => setAvatar({ ...avatar, communicationStyle: style })}
-                  className={`w-full px-4 py-3 rounded-lg font-semibold text-left transition-all ${
-                    avatar.communicationStyle === style
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  key={item.style}
+                  onClick={() => setAvatar({ ...avatar, communicationStyle: item.style })}
+                  className={`w-full px-4 py-4 rounded-lg border-2 text-left font-semibold transition-all flex items-center gap-4 ${
+                    avatar.communicationStyle === item.style
+                      ? 'border-pink-500 bg-pink-500/10 text-white'
+                      : 'border-slate-600 bg-slate-700/30 text-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  {style.charAt(0).toUpperCase() + style.slice(1)}
+                  <div className="text-3xl">{item.icon}</div>
+                  <div>
+                    <div className="font-semibold capitalize">{item.style}</div>
+                    <div className="text-xs text-slate-400 font-normal">{item.desc}</div>
+                  </div>
                 </button>
               ))}
             </div>
 
-            <div className="mb-6">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={avatar.memoryEnabled}
-                  onChange={(e) => setAvatar({ ...avatar, memoryEnabled: e.target.checked })}
-                  className="w-5 h-5 rounded bg-slate-700 border-slate-600"
-                />
-                <span className="text-slate-300">Enable memory (remember past conversations)</span>
-              </label>
-            </div>
+            <label className="flex items-center gap-3 text-slate-300 mb-6 cursor-pointer hover:text-white transition-all">
+              <input
+                type="checkbox"
+                checked={avatar.memoryEnabled}
+                onChange={(e) => setAvatar({ ...avatar, memoryEnabled: e.target.checked })}
+                className="w-5 h-5 rounded bg-slate-700 border-slate-600 cursor-pointer"
+              />
+              <span className="text-sm">🧠 Remember our conversations</span>
+            </label>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
-                onClick={() => setStep('traits')}
+                onClick={handleBack}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Back
               </button>
               <button
-                onClick={handleStyleNext}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all"
+                onClick={handleNext}
+                className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Review
               </button>
@@ -255,50 +335,45 @@ export default function AvatarBuilder({ onComplete, isLoading }: AvatarBuilderPr
           </div>
         )}
 
+        {/* Review */}
         {step === 'review' && (
           <div>
-            <h2 className="text-3xl font-bold text-white mb-6">Meet {avatar.name}!</h2>
+            <h2 className="text-3xl font-light italic text-white mb-6 font-serif">Meet {avatar.name}!</h2>
 
-            <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg p-6 mb-6 border border-purple-500/30">
+            <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 rounded-lg p-6 mb-6 border border-pink-500/30">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-slate-400 text-sm">Name</p>
+                  <p className="text-slate-400 text-xs mb-1">Name</p>
                   <p className="text-white font-semibold">{avatar.name}</p>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm">Communication</p>
-                  <p className="text-white font-semibold">
-                    {avatar.communicationStyle?.charAt(0).toUpperCase()}
-                    {avatar.communicationStyle?.slice(1)}
-                  </p>
+                  <p className="text-slate-400 text-xs mb-1">Personality</p>
+                  <p className="text-white font-semibold">{personalityInput}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">Communication</p>
+                  <p className="text-white font-semibold">{avatar.communicationStyle}</p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">Memory</p>
+                  <p className="text-white font-semibold">{avatar.memoryEnabled ? 'Enabled' : 'Disabled'}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-slate-400 text-sm">Personality</p>
-                  <p className="text-white">{avatar.personality}</p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-slate-400 text-sm">Traits</p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {avatar.traits?.map((trait) => (
-                      <span
-                        key={trait}
-                        className="bg-blue-600/50 text-blue-200 px-3 py-1 rounded-full text-sm"
-                      >
+                  <p className="text-slate-400 text-xs mb-2">Traits</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTraits.map((trait) => (
+                      <span key={trait} className="bg-pink-600/50 text-pink-200 px-3 py-1 rounded-full text-xs">
                         {trait}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="col-span-2">
-                  <p className="text-slate-400 text-sm">Memory</p>
-                  <p className="text-white">{avatar.memoryEnabled ? 'Enabled' : 'Disabled'}</p>
-                </div>
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
-                onClick={() => setStep('style')}
+                onClick={handleBack}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Edit
@@ -306,7 +381,7 @@ export default function AvatarBuilder({ onComplete, isLoading }: AvatarBuilderPr
               <button
                 onClick={handleComplete}
                 disabled={isLoading}
-                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
+                className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-all"
               >
                 Create {avatar.name}
               </button>

@@ -6,10 +6,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface PresetAvatarsProps {
   onSelectPreset: (avatar: Avatar) => void;
+  onCreateCustom: () => void;
   isLoading: boolean;
 }
 
-export default function PresetAvatars({ onSelectPreset, isLoading }: PresetAvatarsProps) {
+export default function PresetAvatars({ onSelectPreset, onCreateCustom, isLoading }: PresetAvatarsProps) {
   const handleSelectPreset = (presetAvatar: typeof PRESET_AVATARS[0]) => {
     const newAvatar: Avatar = {
       id: uuidv4(),
@@ -90,8 +91,15 @@ export default function PresetAvatars({ onSelectPreset, isLoading }: PresetAvata
 
       {/* Create custom section */}
       <div className="mt-8 p-6 rounded-lg border border-dashed border-slate-600 bg-slate-800/30 text-center">
-        <p className="text-slate-300 mb-4">Want someone completely unique?</p>
-        <p className="text-sm text-slate-400">Create a custom avatar with your own personality traits and backstory.</p>
+        <p className="text-slate-300 mb-4 font-semibold">Want someone completely unique?</p>
+        <p className="text-sm text-slate-400 mb-4">Create a custom avatar with your own personality traits and backstory.</p>
+        <button
+          onClick={onCreateCustom}
+          disabled={isLoading}
+          className="px-6 py-2 rounded bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold transition-all disabled:opacity-50"
+        >
+          Create Custom Avatar
+        </button>
       </div>
     </div>
   );

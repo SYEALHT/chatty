@@ -128,7 +128,12 @@ export default function Home() {
           <h1 className="text-2xl font-light italic text-white mb-8 font-serif">Chatty</h1>
 
           <button
-            onClick={() => setShowBuilder(true)}
+            onClick={() => {
+              setSelectedAvatarId(null);
+              setMessages([]);
+              setConversationHistory([]);
+              setShowBuilder(false);
+            }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg mb-6 transition-all text-sm"
           >
             + New Avatar
@@ -175,7 +180,11 @@ export default function Home() {
             </>
           ) : showBuilder ? null : (
             <div className="flex-1 overflow-y-auto p-8 bg-gradient-to-b from-slate-800 to-slate-900">
-              <PresetAvatars onSelectPreset={handleCreateAvatar} isLoading={isLoading} />
+              <PresetAvatars 
+                onSelectPreset={handleCreateAvatar} 
+                onCreateCustom={() => setShowBuilder(true)}
+                isLoading={isLoading} 
+              />
             </div>
           )}
         </div>

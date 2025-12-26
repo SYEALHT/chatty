@@ -122,21 +122,21 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-black to-slate-950">
       <div className="flex h-screen">
-        <div className="w-64 bg-slate-800 border-r border-slate-700 p-4 flex flex-col">
-          <h1 className="text-2xl font-bold text-white mb-6">Chatty</h1>
+        <div className="w-64 bg-gradient-to-b from-slate-900/80 to-black border-r border-slate-800 p-4 flex flex-col">
+          <h1 className="text-2xl font-light italic text-white mb-8 font-serif">Chatty</h1>
 
           <button
             onClick={() => setShowBuilder(true)}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 rounded-lg mb-4 transition-all"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg mb-6 transition-all text-sm"
           >
             + New Avatar
           </button>
 
           <div className="flex-1 overflow-y-auto space-y-2">
             {avatars.length === 0 ? (
-              <p className="text-slate-400 text-sm text-center mt-8">
+              <p className="text-slate-400 text-xs text-center mt-8">
                 No avatars yet. Create one to get started!
               </p>
             ) : (
@@ -148,14 +148,14 @@ export default function Home() {
                     setMessages([]);
                     setConversationHistory([]);
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-all text-sm ${
                     selectedAvatarId === avatar.id
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-800/30 text-slate-300 hover:bg-slate-800/60'
                   }`}
                 >
-                  <p className="font-semibold">{avatar.name}</p>
-                  <p className="text-xs opacity-70">{avatar.traits.join(', ')}</p>
+                  <p className="font-semibold text-sm">{avatar.name}</p>
+                  <p className="text-xs opacity-60 mt-1">{avatar.traits.slice(0, 2).join(', ')}</p>
                 </button>
               ))
             )}
@@ -169,6 +169,7 @@ export default function Home() {
                 messages={messages}
                 isLoading={isLoading}
                 avatarName={selectedAvatar.name}
+                avatarPersonality={selectedAvatar.personality}
               />
               <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
             </>

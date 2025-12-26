@@ -7,9 +7,15 @@ interface ChatWindowProps {
   messages: Message[];
   isLoading: boolean;
   avatarName: string;
+  avatarPersonality?: string;
 }
 
-export default function ChatWindow({ messages, isLoading, avatarName }: ChatWindowProps) {
+export default function ChatWindow({ 
+  messages, 
+  isLoading, 
+  avatarName,
+  avatarPersonality 
+}: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,23 +23,27 @@ export default function ChatWindow({ messages, isLoading, avatarName }: ChatWind
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-800 rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4 border-b border-purple-500/30">
-        <h2 className="text-xl font-bold text-white">{avatarName}</h2>
-        <p className="text-sm text-purple-100">Always here to chat</p>
+    <div className="flex flex-col h-full bg-black/50">
+      {/* Header - Avatar Info */}
+      <div className="px-8 py-12 text-center border-b border-slate-800">
+        <p className="text-xs font-semibold tracking-widest text-slate-500 mb-4 uppercase">
+          Fragment of mind created
+        </p>
+        <h1 className="text-5xl font-light italic text-white mb-3 font-serif">
+          {avatarName}
+        </h1>
+        <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+          {avatarPersonality}
+        </p>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-8 space-y-6">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-center">
-            <div>
-              <p className="text-lg font-semibold text-purple-300 mb-2">
-                Start a conversation with {avatarName}
-              </p>
-              <p className="text-sm text-slate-400">
-                They&apos;re ready to listen and respond.
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <p className="text-slate-400 text-sm">
+                Begin your conversation
               </p>
             </div>
           </div>
@@ -43,20 +53,34 @@ export default function ChatWindow({ messages, isLoading, avatarName }: ChatWind
               key={msg.id}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-                  msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-slate-700 text-slate-100 rounded-bl-none'
-                }`}
-              >
-                <p className="text-sm leading-relaxed break-words">{msg.content}</p>
-                <p className="text-xs mt-1 opacity-70">
-                  {new Date(msg.timestamp).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+              <div className={`flex gap-3 max-w-md ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {/* Avatar */}
+                {msg.role === 'avatar' && (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-indigo-400 flex-shrink-0 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-white">
+                      {avatarName.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Message */}
+                <div>
+                  <div
+                    className={`px-4 py-3 rounded-lg text-sm leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : 'bg-slate-800 text-slate-100 rounded-bl-none'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           ))
@@ -64,11 +88,18 @@ export default function ChatWindow({ messages, isLoading, avatarName }: ChatWind
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-slate-700 text-slate-100 px-4 py-3 rounded-lg rounded-bl-none">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200" />
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-indigo-400 flex-shrink-0 flex items-center justify-center">
+                <span className="text-xs font-semibold text-white">
+                  {avatarName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="bg-slate-800 px-4 py-3 rounded-lg rounded-bl-none">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100" />
+                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200" />
+                </div>
               </div>
             </div>
           </div>

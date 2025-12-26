@@ -19,22 +19,22 @@ export default function ChatInput({ onSend, isLoading }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-800 border-t border-slate-700 p-4">
-      <div className="flex gap-2">
+    <form onSubmit={handleSubmit} className="bg-black/30 border-t border-slate-800 px-8 py-6">
+      <div className="flex gap-3 max-w-2xl mx-auto">
         <input
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="Share your thoughts..."
           disabled={isLoading}
-          className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 text-sm"
         />
         <button
           type="submit"
           disabled={isLoading || !message.trim()}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg transition-all"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-3 rounded-lg transition-all text-sm"
         >
-          {isLoading ? 'Thinking...' : 'Send'}
+          {isLoading ? '...' : 'Send'}
         </button>
       </div>
     </form>

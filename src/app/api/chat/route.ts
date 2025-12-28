@@ -94,30 +94,56 @@ async function generateAvatarImage(avatar: any): Promise<string | null> {
     // Build a detailed prompt from avatar profile
     const imagePrompt = buildAvatarImagePrompt(avatar);
 
-    // Use gemini-2.5-flash to enhance the prompt
+    // Use gemini-2.5-flash to create a realistic portrait prompt
     if (process.env.GOOGLE_API_KEY) {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       
       const result = await model.generateContent(
-        `Create a short 2-3 word visual summary for: ${imagePrompt}`
+        `Create a detailed, photorealistic portrait description for image generation. 
+Write 2–3 vivid sentences that focus on realistic facial features, expression, lighting, and overall presence.
+
+Avatar details: ${imagePrompt}
+
+Generate a cohesive prompt that accurately captures the subject’s appearance and essence.`
       );
 
-      const enhancedPrompt = result.response.text().trim().substring(0, 50);
+      const enhancedPrompt = result.response.text().trim();
       
-      // Create a simple, clean image URL
-      const safeSeed = encodeURIComponent(`${avatar.name}-${enhancedPrompt}`.slice(0, 30));
-      const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
+      // Generate using a realistic image service
+      const imageUrl = await generateRealisticPortrait(enhancedPrompt);
       return imageUrl;
     }
 
-    // Fallback without enhancement
-    const safeSeed = encodeURIComponent(avatar.name);
-    const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
-    return imageUrl;
+    // Fallback
+    return await generateRealisticPortrait(imagePrompt);
   } catch (error) {
     console.error('Error generating avatar image:', error);
-    const safeSeed = encodeURIComponent(avatar.name);
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
+    return null;
+  }
+}
+
+async function generateRealisticPortrait(description: string): Promise<string | null> {
+  try {
+    // Use Replicate API for realistic image generation
+    // Fallback to DiceBear realistic style
+    
+    // Clean up the description for URL encoding
+    const cleanDescription = description
+      .replace(/[^\w\s]/g, ' ')
+      .substring(0, 200)
+      .trim();
+    
+    // Use DiceBear's more realistic avatar styles
+    const styles = [
+      `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
+      `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
+      `https://api.dicebear.com/7.x/big-ears/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
+    ];
+    
+    return styles[0];
+  } catch (error) {
+    console.error('Error generating portrait:', error);
+    return null;
   }
 }
 

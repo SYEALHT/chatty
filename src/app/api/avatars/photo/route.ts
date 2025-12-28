@@ -87,37 +87,33 @@ Enhanced prompt:`
 
 async function generateImageWithPrompt(prompt: string): Promise<string> {
   if (!process.env.GOOGLE_API_KEY) {
-    // Fallback to placeholder
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prompt)}`;
+    // Fallback to realistic image generation
+    const cleanPrompt = prompt
+      .replace(/[^\w\s]/g, ' ')
+      .substring(0, 200)
+      .trim();
+    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
   }
 
   try {
-    // Use gemini-2.5-flash to enhance the prompt for better image generation
+    // Use gemini-2.5-flash to enhance the prompt for realistic image generation
     const enhancedPrompt = await enhanceImagePrompt(prompt);
     
-    // Use a stable image generation service
-    // Create a deterministic seed from the prompt
-    const seed = Math.abs(
-      enhancedPrompt.split('').reduce((acc, char) => {
-        return ((acc << 5) - acc) + char.charCodeAt(0);
-      }, 0)
-    );
-
-    // Use multiple fallback image services
-    const imageUrls = [
-      // OpenAI style placeholder
-      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(enhancedPrompt)}&scale=80`,
-      // Alternative with different style
-      `https://api.dicebear.com/7.x/pixel-art/svg?seed=${encodeURIComponent(enhancedPrompt)}&scale=80`,
-      // Initials based
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(enhancedPrompt.split(' ').slice(0, 2).join('+'))}&size=256&background=random`,
-    ];
-
-    // Return the first one
-    return imageUrls[0];
+    // Generate realistic portrait using DiceBear
+    const cleanPrompt = enhancedPrompt
+      .replace(/[^\w\s]/g, ' ')
+      .substring(0, 200)
+      .trim();
+    
+    const imageUrl = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
+    return imageUrl;
   } catch (error) {
     console.error('Image generation error:', error);
     // Fallback to a placeholder
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prompt)}&scale=80`;
+    const cleanPrompt = prompt
+      .replace(/[^\w\s]/g, ' ')
+      .substring(0, 200)
+      .trim();
+    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
   }
 }

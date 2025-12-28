@@ -15,6 +15,11 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<any[]>([]);
+  
+  // Store conversation history for each avatar
+  const [conversationsByAvatar, setConversationsByAvatar] = useState<{
+    [avatarId: string]: { messages: Message[]; history: any[] };
+  }>({});
 
   const selectedAvatar = avatars.find((a) => a.id === selectedAvatarId);
 
@@ -101,6 +106,15 @@ export default function Home() {
 
         setMessages((prev) => [...prev, avatarMessage]);
         setConversationHistory((prev) => [...prev, { role: 'assistant', content: data.response }]);
+        
+        // Save conversation for this avatar
+        setConversationsByAvatar((prev) => ({
+          ...prev,
+          [selectedAvatarId!]: { 
+            messages: [...messages, userMessage, avatarMessage], 
+            history: [...conversationHistory, { role: 'user', content }, { role: 'assistant', content: data.response }]
+          },
+        }));
       }
     } catch (error) {
       console.error('Failed to get response:', error);
@@ -151,9 +165,24 @@ export default function Home() {
                 <button
                   key={avatar.id}
                   onClick={() => {
+                    // Save current conversation before switching
+                    if (selectedAvatarId) {
+                      setConversationsByAvatar((prev) => ({
+                        ...prev,
+                        [selectedAvatarId]: { messages, history: conversationHistory },
+                      }));
+                    }
+                    
+                    // Switch to new avatar and restore its conversation
                     setSelectedAvatarId(avatar.id);
-                    setMessages([]);
-                    setConversationHistory([]);
+                    const savedConversation = conversationsByAvatar[avatar.id];
+                    if (savedConversation) {
+                      setMessages(savedConversation.messages);
+                      setConversationHistory(savedConversation.history);
+                    } else {
+                      setMessages([]);
+                      setConversationHistory([]);
+                    }
                   }}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-all text-sm ${
                     selectedAvatarId === avatar.id

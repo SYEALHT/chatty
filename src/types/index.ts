@@ -14,6 +14,7 @@ export interface Avatar {
     tone: 'soft' | 'energetic' | 'calm' | 'playful';
     voiceId?: string;
   };
+  personalPhotoUrl?: string;
   memoryEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,7 @@ export interface Message {
   timestamp: Date;
   hasVoice?: boolean;
   hasImage?: boolean;
+  imageUrl?: string;
 }
 
 export interface Memory {

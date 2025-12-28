@@ -95,6 +95,8 @@ export default function Home() {
           role: 'avatar',
           content: data.response,
           timestamp: new Date(),
+          imageUrl: data.imageUrl,
+          hasImage: data.hasImage || false,
         };
 
         setMessages((prev) => [...prev, avatarMessage]);
@@ -175,6 +177,17 @@ export default function Home() {
                 isLoading={isLoading}
                 avatarName={selectedAvatar.name}
                 avatarPersonality={selectedAvatar.personality}
+                avatarId={selectedAvatarId || undefined}
+                personalPhotoUrl={selectedAvatar.personalPhotoUrl}
+                onPhotoGenerated={(photoUrl) => {
+                  // Update avatar with new photo
+                  const updatedAvatars = avatars.map(a => 
+                    a.id === selectedAvatarId 
+                      ? { ...a, personalPhotoUrl: photoUrl }
+                      : a
+                  );
+                  setAvatars(updatedAvatars);
+                }}
               />
               <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
             </>

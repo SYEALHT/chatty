@@ -17,6 +17,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
     }
 
+    // Check if user is asking for an image
+    const requestsImage = detectImageRequest(message);
+
+    if (requestsImage) {
+      // Generate image based on avatar profile
+      const imageUrl = await generateAvatarImage(avatar);
+      
+      if (imageUrl) {
+        return NextResponse.json({
+          success: true,
+          response: `Here's a picture of me:`,
+          avatarId,
+          imageUrl,
+          hasImage: true,
+        });
+      }
+    }
+
     if (!process.env.GOOGLE_API_KEY) {
       console.warn('GOOGLE_API_KEY not set, using mock responses');
       const mockResponse = getMockAvatarResponse(avatar);
@@ -36,14 +54,14 @@ export async function POST(request: NextRequest) {
       parts: [{ text: msg.content }],
     }));
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash',
+      systemInstruction: systemPrompt,
+    });
 
-    // Start chat session with system prompt
+    // Start chat session with history
     const chat = model.startChat({
       history: history,
-      systemInstruction: {
-        parts: [{ text: systemPrompt }],
-      },
     });
 
     const result = await chat.sendMessage(message);
@@ -58,6 +76,66 @@ export async function POST(request: NextRequest) {
     console.error('Chat API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+function detectImageRequest(message: string): boolean {
+  const imageKeywords = [
+    'picture', 'photo', 'image', 'draw', 'sketch',
+    'show me', 'send me', 'give me', 'create',
+    'generate', 'make', 'display', 'visual',
+  ];
+
+  const lowerMessage = message.toLowerCase();
+  return imageKeywords.some(keyword => lowerMessage.includes(keyword));
+}
+
+async function generateAvatarImage(avatar: any): Promise<string | null> {
+  try {
+    // Build a detailed prompt from avatar profile
+    const imagePrompt = buildAvatarImagePrompt(avatar);
+
+    // Use gemini-2.5-flash to enhance the prompt
+    if (process.env.GOOGLE_API_KEY) {
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      
+      const result = await model.generateContent(
+        `Create a vivid, visual description for an image generation model. 
+Keep it to 1-2 sentences. Make it specific and detailed about appearance.
+
+Description: ${imagePrompt}
+
+Enhanced visual prompt:`
+      );
+
+      const enhancedPrompt = result.response.text();
+      
+      // Create a deterministic image URL based on the enhanced prompt
+      const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(enhancedPrompt)}&scale=80&backgroundColor=random`;
+      return imageUrl;
+    }
+
+    // Fallback without enhancement
+    const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatar.name)}&scale=80&backgroundColor=random`;
+    return imageUrl;
+  } catch (error) {
+    console.error('Error generating avatar image:', error);
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatar.name)}&scale=80`;
+  }
+}
+
+function buildAvatarImagePrompt(avatar: any): string {
+  const traits = avatar.traits.join(', ');
+  const appearance = avatar.appearance?.description || 'mystical digital entity';
+  const personality = avatar.personality;
+  const backstory = avatar.backstory || '';
+
+  return `Create a portrait image of ${avatar.name}, a character with these qualities:
+Personality: ${personality}
+Traits: ${traits}
+Appearance: ${appearance}
+${backstory ? `Background: ${backstory}` : ''}
+
+Generate a realistic, dignified portrait that captures their essence. Make it visually distinct and suitable as a profile picture.`;
 }
 
 function getMockAvatarResponse(avatar: { name: string; personality: string; traits: string[] }): string {

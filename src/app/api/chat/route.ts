@@ -99,27 +99,25 @@ async function generateAvatarImage(avatar: any): Promise<string | null> {
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       
       const result = await model.generateContent(
-        `Create a vivid, visual description for an image generation model. 
-Keep it to 1-2 sentences. Make it specific and detailed about appearance.
-
-Description: ${imagePrompt}
-
-Enhanced visual prompt:`
+        `Create a short 2-3 word visual summary for: ${imagePrompt}`
       );
 
-      const enhancedPrompt = result.response.text();
+      const enhancedPrompt = result.response.text().trim().substring(0, 50);
       
-      // Create a deterministic image URL based on the enhanced prompt
-      const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(enhancedPrompt)}&scale=80&backgroundColor=random`;
+      // Create a simple, clean image URL
+      const safeSeed = encodeURIComponent(`${avatar.name}-${enhancedPrompt}`.slice(0, 30));
+      const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
       return imageUrl;
     }
 
     // Fallback without enhancement
-    const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatar.name)}&scale=80&backgroundColor=random`;
+    const safeSeed = encodeURIComponent(avatar.name);
+    const imageUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
     return imageUrl;
   } catch (error) {
     console.error('Error generating avatar image:', error);
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(avatar.name)}&scale=80`;
+    const safeSeed = encodeURIComponent(avatar.name);
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${safeSeed}&scale=80`;
   }
 }
 

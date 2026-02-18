@@ -96,18 +96,8 @@ async function generateAvatarImage(avatar: any): Promise<string | null> {
 
     // Use gemini-2.5-flash to create a realistic portrait prompt
     if (process.env.GOOGLE_API_KEY) {
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      
-      const result = await model.generateContent(
-        `Create a detailed, photorealistic portrait description for image generation. 
-Write 2–3 vivid sentences that focus on realistic facial features, expression, lighting, and overall presence.
-
-Avatar details: ${imagePrompt}
-
-Generate a cohesive prompt that accurately captures the subject’s appearance and essence.`
-      );
-
-      const enhancedPrompt = result.response.text().trim();
+      // Skip Gemini to save quota - add realistic keywords instead
+      const enhancedPrompt = `${imagePrompt}. Photorealistic portrait photograph with natural lighting, realistic skin texture, professional DSLR quality.`;
       
       // Generate using a realistic image service
       const imageUrl = await generateRealisticPortrait(enhancedPrompt);
@@ -122,27 +112,49 @@ Generate a cohesive prompt that accurately captures the subject’s appearance a
   }
 }
 
-async function generateRealisticPortrait(description: string): Promise<string | null> {
+async function generateRealisticPortrait(prompt: string): Promise<string | null> {
   try {
-    // Use Replicate API for realistic image generation
-    // Fallback to DiceBear realistic style
-    
-    // Clean up the description for URL encoding
-    const cleanDescription = description
-      .replace(/[^\w\s]/g, ' ')
-      .substring(0, 200)
-      .trim();
-    
-    // Use DiceBear's more realistic avatar styles
-    const styles = [
-      `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
-      `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
-      `https://api.dicebear.com/7.x/big-ears/svg?seed=${encodeURIComponent(cleanDescription)}&size=256`,
-    ];
-    
-    return styles[0];
-  } catch (error) {
-    console.error('Error generating portrait:', error);
+    const API_KEY = process.env.DEAPI_KEY;
+    if (!API_KEY) {
+      console.error("Missing DEAPI_KEY");
+      return null;
+    }
+
+    // Generate a deterministic seed from the prompt
+    const seed = Math.abs(
+      prompt.split('').reduce((acc, char) => {
+        return ((acc << 5) - acc) + char.charCodeAt(0);
+      }, 0)
+    ) % 2147483647;
+
+    // Build the request
+    const response = await fetch("https://api.deapi.ai/api/v1/client/txt2img", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        model: "ZImageTurbo_INT8",
+        prompt: prompt,
+        seed: seed,
+        width: 1024,
+        height: 1024,
+        steps: 20,
+      })
+    });
+
+    const json = await response.json();
+
+    if (!json?.data?.output || json.data.output.length === 0) {
+      console.error("No image returned", json);
+      return null;
+    }
+
+    return json.data.output[0];
+  } catch (err) {
+    console.error("Image generation error:", err);
     return null;
   }
 }

@@ -30,17 +30,14 @@ export async function POST(request: NextRequest) {
 
     // Generate image using imagePrompt
     if (imagePrompt) {
-      if (!process.env.GOOGLE_API_KEY) {
-        console.warn('GOOGLE_API_KEY not set, cannot generate images');
+      if (!process.env.DEAPI_KEY) {
+        console.warn('DEAPI_KEY not set, cannot generate images');
         return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
       }
 
       try {
-        // Use gemini-2.5-flash to enhance the image prompt
-        const enhancedPrompt = await enhanceImagePrompt(imagePrompt);
-        
-        // Generate image using the enhanced prompt
-        const imageUrl = await generateImageWithPrompt(enhancedPrompt);
+        // Generate image directly without Gemini enhancement (to save quota)
+        const imageUrl = await generateImageWithPrompt(imagePrompt);
         
         return NextResponse.json({
           success: true,
@@ -60,60 +57,53 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function enhanceImagePrompt(userPrompt: string): Promise<string> {
-  if (!process.env.GOOGLE_API_KEY) {
-    return userPrompt;
-  }
-
-  try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    
-    const result = await model.generateContent(
-      `Enhance this image description into a detailed, vivid prompt for an image generation model. 
-Keep it concise (1-2 sentences) but descriptive. Add visual details and style if appropriate.
-
-User's request: "${userPrompt}"
-
-Enhanced prompt:`
-    );
-
-    const enhancedText = result.response.text();
-    return enhancedText.trim();
-  } catch (error) {
-    console.error('Error enhancing prompt:', error);
-    return userPrompt; // Fallback to original prompt
-  }
-}
-
 async function generateImageWithPrompt(prompt: string): Promise<string> {
-  if (!process.env.GOOGLE_API_KEY) {
-    // Fallback to realistic image generation
-    const cleanPrompt = prompt
-      .replace(/[^\w\s]/g, ' ')
-      .substring(0, 200)
-      .trim();
-    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
-  }
-
   try {
-    // Use gemini-2.5-flash to enhance the prompt for realistic image generation
-    const enhancedPrompt = await enhanceImagePrompt(prompt);
+    const API_KEY = process.env.DEAPI_KEY;
+    if (!API_KEY) {
+      console.error("Missing DEAPI_KEY");
+      return "";
+    }
+
+    // Add photorealistic keywords (skip Gemini to save quota)
+    const enhancedPrompt = `${prompt}. Photorealistic portrait photograph with natural lighting, realistic skin texture, professional DSLR quality, shallow depth of field.`;
     
-    // Generate realistic portrait using DiceBear
-    const cleanPrompt = enhancedPrompt
-      .replace(/[^\w\s]/g, ' ')
-      .substring(0, 200)
-      .trim();
+    // Generate a deterministic seed from the prompt
+    const seed = Math.abs(
+      enhancedPrompt.split('').reduce((acc, char) => {
+        return ((acc << 5) - acc) + char.charCodeAt(0);
+      }, 0)
+    ) % 2147483647;
     
-    const imageUrl = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
-    return imageUrl;
-  } catch (error) {
-    console.error('Image generation error:', error);
-    // Fallback to a placeholder
-    const cleanPrompt = prompt
-      .replace(/[^\w\s]/g, ' ')
-      .substring(0, 200)
-      .trim();
-    return `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(cleanPrompt)}&size=256`;
+    // Build the request
+    const response = await fetch("https://api.deapi.ai/api/v1/client/txt2img", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        model: "ZImageTurbo_INT8",
+        prompt: enhancedPrompt,
+        seed: seed,
+        width: 1024,
+        height: 1024,
+        steps: 20,
+      })
+    });
+
+    const json = await response.json();
+
+    if (!json?.data?.output || json.data.output.length === 0) {
+      console.error("No image returned", json);
+      return "";
+    }
+
+    // The API returns an array of image URLs
+    return json.data.output[0];
+  } catch (err) {
+    console.error("Image generation error:", err);
+    return "";
   }
 }
